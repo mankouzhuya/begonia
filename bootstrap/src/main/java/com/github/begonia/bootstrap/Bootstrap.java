@@ -1,25 +1,22 @@
 package com.github.begonia.bootstrap;
 
 import com.github.begonia.bootstrap.loader.BegoniaLoader;
+import com.github.begonia.bootstrap.process.ProcessChain;
+import com.github.begonia.bootstrap.process.spring.controller.ControllerProcess;
+import com.github.begonia.bootstrap.process.spring.service.ServiceProcess;
+import com.github.begonia.bootstrap.strategy.AnnotationEnhanceStrategy;
+import com.github.begonia.bootstrap.strategy.ClassNameEnhanceStrategy;
+import com.github.begonia.bootstrap.strategy.Register;
 import com.github.begonia.bootstrap.trigger.TaskTrigger;
 import com.google.common.base.Strings;
-import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.LoaderClassPath;
-import javassist.bytecode.AccessFlag;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.security.ProtectionDomain;
-import java.util.Arrays;
 
 @Slf4j
 public class Bootstrap {
@@ -36,32 +33,35 @@ public class Bootstrap {
         BegoniaLoader.loadJarPath(path);
         TaskTrigger.trigger();
 
-        instrumentation.addTransformer(new ClassFileTransformer() {
-            public byte[] transform(ClassLoader loader, String className, Class classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-                try {
-                    if(Strings.isNullOrEmpty(className)) return null;
-                    if(log.isDebugEnabled()) log.debug("加载class:{},classLoader是:{}",className, loader != null ? loader.toString() : null);
+        ProcessChain chain = chain();
 
-                    ClassPool pool = ClassPool.getDefault();
-                    //pool.insertClassPath(new ClassClassPath(this.getClass()));
-                    pool.insertClassPath(new LoaderClassPath(loader));
-                    pool.insertClassPath(path);
+        instrumentation.addTransformer((loader,className,classBeingRedefined,protectionDomain,classfileBuffer)->{
+            try {
+                if(Strings.isNullOrEmpty(className)) return null;
+                if(log.isDebugEnabled()) log.debug("加载class:{},classLoader是:{}",className, loader != null ? loader.toString() : null);
+                ClassPool pool = ClassPool.getDefault();
+                //pool.insertClassPath(new ClassClassPath(this.getClass()));
+                pool.insertClassPath(new LoaderClassPath(loader));
+                pool.insertClassPath(path);
+                if(MOD_CURRENT.equals(MOD_DEBUG)) CtClass.debugDump = DEBUG_DUMP_PATH;
 
-                    CtClass cls = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
-
-                    if(MOD_CURRENT.equals(MOD_DEBUG)) CtClass.debugDump = DEBUG_DUMP_PATH;
-
-
-                    return cls.toBytecode();
-                } catch (Exception e) {
-                    log.error("初始化失败:{}", e);
-                }
-                return null;
+                byte[] bytes = new Register(new AnnotationEnhanceStrategy(),classfileBuffer).execute(chain,className,pool);
+                if(bytes != null) return bytes;
+                return new Register(new ClassNameEnhanceStrategy(),classfileBuffer).execute(chain,className,pool);
+            } catch (Exception e) {
+                log.error("初始化失败:{}", e);
             }
+            return null;
         });
+
 
     }
 
-
+    public static ProcessChain chain(){
+        ProcessChain chain = new ProcessChain();
+        chain.addProcesser(new ControllerProcess());
+        chain.addProcesser(new ServiceProcess());
+        return chain;
+    }
 
 }

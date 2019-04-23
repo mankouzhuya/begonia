@@ -1,13 +1,22 @@
 package com.github.begonia.bootstrap.process;
 
 import javassist.*;
+import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.AttributeInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
 
-import java.io.IOException;
 
-public abstract class AbsEnhance implements Enhance{
+public abstract class AbsProcess implements Processer {
+
+    /**
+     * 检查方法是否可以增强
+     * **/
+    protected Boolean canEnhanceMethod(CtMethod ctMethod){
+        if(AccessFlag.PUBLIC == ctMethod.getMethodInfo().getAccessFlags() && !METHOD_EQUALS.equals(ctMethod.getLongName()) && !METHOD_TOSTRING.equals(ctMethod.getLongName())) return true;
+        return false;
+    }
+
 
     protected void addTiming(CtClass cct, CtMethod ctMethod) {
         try {
@@ -67,7 +76,7 @@ public abstract class AbsEnhance implements Enhance{
         }
     }
 
-    private StringBuffer getStackTraceCode(StringBuffer sb) {
+    protected StringBuffer getStackTraceCode(StringBuffer sb) {
         sb.append("     StackTraceElement[] as = Thread.currentThread().getStackTrace();");
         sb.append("     System.out.println(\"class:\"+as[1].getClassName()+\" method:\"+as[1].getMethodName());");
         sb.append("     StringBuffer temp = new StringBuffer();");
@@ -85,7 +94,7 @@ public abstract class AbsEnhance implements Enhance{
      * @return
      * @throws NotFoundException
      */
-    private StringBuffer getParaCode(StringBuffer temp) throws NotFoundException {
+    protected StringBuffer getParaCode(StringBuffer temp) throws NotFoundException {
         temp.append("       Object[] ob = $args; ");
         temp.append("       StringBuffer sb = new StringBuffer();");
         temp.append("       sb.append(\"[\");");
@@ -96,4 +105,6 @@ public abstract class AbsEnhance implements Enhance{
         temp.append("       System.out.println(\"参数:\"+sb);");
         return temp;
     }
+
+
 }
