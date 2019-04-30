@@ -10,6 +10,6 @@ public interface Processer {
 
     String METHOD_TOSTRING= "java.lang.Object.toString()";
 
-    byte[] process(String sourceClassName, CtClass cls);
+    CtClass process(ProcessChain chain,CtClass ctClass);
 
 }

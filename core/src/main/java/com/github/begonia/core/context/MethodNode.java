@@ -9,13 +9,14 @@ import java.util.List;
 @Data
 public class MethodNode implements Serializable {
 
-    private String methodId;
+    private String methodId;//id
 
-    private String methodFullName;
+    private String methodFullName;//全限定名
 
-    private String parentMethodId;
-
-    private List<MethodNode> methodNodes;
+    private List<String> args;//方法入参
 
 
+    private String returnInfo;//返回信息
+
+    private Integer excuteTime;//执行时间
 }

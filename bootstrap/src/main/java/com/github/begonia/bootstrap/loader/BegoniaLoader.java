@@ -60,7 +60,7 @@ public class BegoniaLoader{
     public static final void loadJarFile(File file) {
         try {
             addURL.invoke(loader, new Object[] { file.toURI().toURL() });
-            log.info("加载JAR包:{}",file.getAbsolutePath());
+            //log.info("加载JAR包:{}",file.getAbsolutePath());
         } catch (IllegalAccessException | InvocationTargetException | MalformedURLException e) {
            log.error("jar包加载失败:{}",e);
         }

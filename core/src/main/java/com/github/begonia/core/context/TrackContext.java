@@ -18,20 +18,15 @@ public class TrackContext {
 
     private List<MethodNode> methodNodes = new ArrayList<>();
 
-
-    public static TrackContext getTrackContext(){
-        return hoder.get();
-    }
-
     public static TrackContext getTrackContextNotNull(){
-        TrackContext context = new TrackContext();
-        hoder.set(context);
-        return hoder.get();
+        TrackContext context = hoder.get();
+        if(context == null){
+            context = new TrackContext();
+            hoder.set(context);
+        }
+        return context;
     }
 
-    public static void putContext(TrackContext trackContext){
-        hoder.set(trackContext);
-    }
 
     public void addMethodNode(MethodNode methodNode){
         methodNodes.add(methodNode);

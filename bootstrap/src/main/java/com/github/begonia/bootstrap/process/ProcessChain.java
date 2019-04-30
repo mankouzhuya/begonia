@@ -22,11 +22,11 @@ public class ProcessChain extends AbsProcess {
         return this;
     }
 
-    @Override
-    public byte[] process(String sourceClassName, CtClass cls) {
-        if(processers.size() == index.get()) return null;
-        Processer processer = processers.get(index.addAndGet(1));
-        return processer.process(sourceClassName,cls);
-    }
 
+    @Override
+    public CtClass process(ProcessChain processChain, CtClass ctClass) {
+        if(processers.size() == index.get()) return null;
+        Processer processer = processers.get(index.getAndAdd(1));
+        return processer.process(processChain,ctClass);
+    }
 }

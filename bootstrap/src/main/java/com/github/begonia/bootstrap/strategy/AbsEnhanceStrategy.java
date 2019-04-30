@@ -8,22 +8,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbsEnhanceStrategy implements EnhanceStrategy{
 
-    private CtClass ctClass;
-
     @Override
-    public Boolean canProcess(String className, ClassPool pool){
+    public Boolean canProcess(ClassPool pool,String className,CtClass ctClass){
         try {
-            ctClass = pool.get(className);
-            if(ctClass == null ) return false;
+            if(pool.get(className) == null ) return false;
             return true;
         } catch (NotFoundException e) {
-            log.error("类不存在:{}",e);
+            //log.error("ClassPool中不存在类:{}",className);
             return false;
         }
     }
 
     @Override
-    public CtClass getCtClass(String sourceClassName, ClassPool pool) {
+    public CtClass getCtClass(CtClass ctClass) {
         return ctClass;
     }
 }

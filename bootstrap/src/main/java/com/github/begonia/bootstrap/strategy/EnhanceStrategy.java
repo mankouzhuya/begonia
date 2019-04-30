@@ -6,9 +6,11 @@ import javassist.CtClass;
 
 public interface EnhanceStrategy {
 
-    Boolean canProcess(String sourceClassName,ClassPool pool);
+    Boolean canProcess(ClassPool pool,String className,CtClass cls);
 
-    CtClass getCtClass(String sourceClassName,ClassPool pool);
+    CtClass getCtClass(CtClass cls);
+
+    CtClass process(CtClass ctClass);
 
 
 

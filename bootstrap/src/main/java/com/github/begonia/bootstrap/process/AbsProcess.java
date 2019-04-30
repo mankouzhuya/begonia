@@ -1,10 +1,14 @@
 package com.github.begonia.bootstrap.process;
 
+import com.alibaba.fastjson.JSON;
+import io.vavr.Tuple3;
 import javassist.*;
 import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.AttributeInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
+
+import java.util.stream.Collectors;
 
 
 public abstract class AbsProcess implements Processer {
@@ -17,64 +21,83 @@ public abstract class AbsProcess implements Processer {
         return false;
     }
 
-
-    protected void addTiming(CtClass cct, CtMethod ctMethod) {
-        try {
-            String oldMethodName = ctMethod.getName();
-            String newMethodName = oldMethodName + "$impl";
-            //将旧的方法名称进行重新命名
-            ctMethod.setName(newMethodName);
-            //方法的副本，采用过滤器的方式
-            CtMethod newCtMethod = CtNewMethod.copy(ctMethod, oldMethodName, cct, null);
-
-            for(Object attribute: ctMethod.getMethodInfo().getAttributes()) {
-                newCtMethod.getMethodInfo().addAttribute((AttributeInfo)attribute);
-            }
-            ctMethod.getMethodInfo().removeAttribute(AnnotationsAttribute.visibleTag);
-            ctMethod.getMethodInfo().removeAttribute(ParameterAnnotationsAttribute.visibleTag);
-
-            //为该方法添加时间过滤器来计算时间，并判断获取时间的方法是否有返回值
-            String type = ctMethod.getReturnType().getName();
-            StringBuffer body = new StringBuffer();
-            body.append("{\n long start = System.currentTimeMillis();\n");
-
-            body.append("\ncom.xiehua.agent.context.TrackContext context = com.xiehua.agent.context.TrackContext.getTrackContextNotNull();");
-            body.append("\ncom.xiehua.agent.context.MethodNode methodNode = new com.xiehua.agent.context.MethodNode();");
-            body.append("\nmethodNode.setMethodId(java.util.UUID.randomUUID().toString().replace(\"-\",\"\"));");
-            body.append("\nmethodNode.setMethodFullName(\""+ctMethod.getLongName()+"\");");
-            body.append("\nmethodNode.setParentMethodId(\"1\");");
-            body.append("\ncontext.addMethodNode(methodNode);");
-            body.append("\nSystem.out.println(context.toString());");
-
-
-            getStackTraceCode(body);
-            getParaCode(body);
-
-            //返回值类型不同
-            if(!"void".equals(type)) {
-                body.append(type + " result = ");
-            }
-            //可以通过$$将传递给拦截器的参数，传递给原来的方法
-            body.append(newMethodName + "($$);\n");
-            //输出方法运行时间差
-            body.append("System.out.println(\"Call to method " + oldMethodName + " took \" + \n (System.currentTimeMillis()-start) + " +  "\" ms.\");\n");
-            if(!"void".equals(type)) {
-                body.append("org.slf4j.LoggerFactory.getLogger(getClass()).info(\"返回参数:{}\",result);\n");
-                body.append("return result;\n");
-            }
-
-            body.append("}");
-
-            newCtMethod.setBody(body.toString());
-
-            CtClass etype = ClassPool.getDefault().get("java.io.IOException");
-            newCtMethod.addCatch("{ System.out.println($e); throw $e; }", etype);
-
-            cct.addMethod(newCtMethod);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+    /***
+     * 处理一个类中的所有方法
+     * **/
+    protected CtMethod processAllMethod(CtClass cct){
+//        Arrays.asList(cct.getMethods()).forEach(m ->{
+//            if(canEnhanceMethod(m)){
+//
+//            }
+//        });
+        return null;
     }
+
+    /**
+     * 影子方法
+     * **/
+    protected Tuple3<CtClass,CtMethod,CtMethod> shadow(CtClass ctClass,CtMethod ctMethod) throws CannotCompileException {
+        String oldMethodName = ctMethod.getName();
+        String newMethodName = oldMethodName + "$impl";
+        ctMethod.setName(newMethodName);
+        CtMethod newCtMethod = CtNewMethod.copy(ctMethod, oldMethodName, ctClass, null);
+        for(Object attribute: ctMethod.getMethodInfo().getAttributes()) {
+            newCtMethod.getMethodInfo().addAttribute((AttributeInfo)attribute);
+        }
+        ctMethod.getMethodInfo().removeAttribute(AnnotationsAttribute.visibleTag);
+        ctMethod.getMethodInfo().removeAttribute(ParameterAnnotationsAttribute.visibleTag);
+        return new Tuple3<CtClass,CtMethod,CtMethod>(ctClass,ctMethod,newCtMethod);
+    }
+
+
+
+    protected StringBuffer excute(Tuple3<CtClass,CtMethod,CtMethod> tuple3) throws NotFoundException {
+        StringBuffer body = new StringBuffer();
+        body.append("{\n long start = System.currentTimeMillis();\n");
+
+        body.append("\ncom.xiehua.agent.context.TrackContext context = com.xiehua.agent.context.TrackContext.getTrackContextNotNull();");
+        body.append("\ncom.xiehua.agent.context.MethodNode methodNode = new com.xiehua.agent.context.MethodNode();");
+
+        String returnType = tuple3._2.getReturnType().getName();
+        if(!"void".equals(returnType)) body.append(returnType + " result = ");
+
+        //excute target method
+        body.append(tuple3._2.getName() + "($$);\n");
+        //rt
+        body.append("long rt = System.currentTimeMillis()-start;\n");
+
+        if(!"void".equals(returnType)) body.append("return result;\n");
+
+
+
+        //tuple3._3.addCatch();
+
+
+        body.append("}\n");
+        return body;
+    }
+
+    public void test(CtMethod newCtMethod){
+        long start = System.currentTimeMillis();
+        com.github.begonia.core.context.TrackContext context = com.github.begonia.core.context.TrackContext.getTrackContextNotNull();
+        com.github.begonia.core.context.MethodNode methodNode = new com.github.begonia.core.context.MethodNode();
+        try {
+            Object[] ob = null;//$args;
+            methodNode.setMethodId(java.util.UUID.randomUUID().toString().replace("-",""));
+            methodNode.setMethodFullName(newCtMethod.getLongName());
+            methodNode.setArgs(java.util.Arrays.asList(ob).stream().map(s -> com.alibaba.fastjson.JSON.toJSONString(s)).collect(Collectors.toList()));
+
+
+
+            //TODO something
+        }finally {
+
+        }
+
+    }
+
+
+
 
     protected StringBuffer getStackTraceCode(StringBuffer sb) {
         sb.append("     StackTraceElement[] as = Thread.currentThread().getStackTrace();");
@@ -85,25 +108,6 @@ public abstract class AbsProcess implements Processer {
         sb.append("     }");
         sb.append("     System.out.println(\"调用堆栈:\"+temp.toString());");
         return sb;
-    }
-
-    /**
-     * 方法参数内容显示的嵌入代码
-     *
-     * @param
-     * @return
-     * @throws NotFoundException
-     */
-    protected StringBuffer getParaCode(StringBuffer temp) throws NotFoundException {
-        temp.append("       Object[] ob = $args; ");
-        temp.append("       StringBuffer sb = new StringBuffer();");
-        temp.append("       sb.append(\"[\");");
-        temp.append("       for (int i = 0; i < ob.length; i++) {");
-        temp.append("            sb.append(ob[i]+\",\");");
-        temp.append("       }");
-        temp.append("       sb.append(\"]\");");
-        temp.append("       System.out.println(\"参数:\"+sb);");
-        return temp;
     }
 
 
