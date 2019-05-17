@@ -1,13 +1,17 @@
 package com.github.begonia.bootstrap.process;
 
 import com.alibaba.fastjson.JSON;
-import io.vavr.Tuple3;
+import com.github.begonia.core.context.MethodNode;
+import com.github.begonia.core.context.PostMan;
+import com.github.begonia.core.context.TrackContext;
+import com.github.begonia.core.fun.Try;
 import javassist.*;
 import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.AttributeInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
 
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 
@@ -15,100 +19,141 @@ public abstract class AbsProcess implements Processer {
 
     /**
      * 检查方法是否可以增强
-     * **/
-    protected Boolean canEnhanceMethod(CtMethod ctMethod){
-        if(AccessFlag.PUBLIC == ctMethod.getMethodInfo().getAccessFlags() && !METHOD_EQUALS.equals(ctMethod.getLongName()) && !METHOD_TOSTRING.equals(ctMethod.getLongName())) return true;
+     **/
+    protected Boolean canEnhanceMethod(CtMethod ctMethod) {
+        if (AccessFlag.PUBLIC == ctMethod.getMethodInfo().getAccessFlags() && !METHOD_EQUALS.equals(ctMethod.getLongName()) && !METHOD_TOSTRING.equals(ctMethod.getLongName()))
+            return true;
         return false;
     }
 
     /***
      * 处理一个类中的所有方法
      * **/
-    protected CtMethod processAllMethod(CtClass cct){
-//        Arrays.asList(cct.getMethods()).forEach(m ->{
-//            if(canEnhanceMethod(m)){
-//
-//            }
-//        });
-        return null;
+    protected CtClass processAllMethod(CtClass cct) {
+        Arrays.asList(cct.getMethods()).forEach(Try.of_c(m ->{
+            if(canEnhanceMethod(m)) shadow(cct,m);
+        }));
+        return cct;
     }
 
     /**
      * 影子方法
-     * **/
-    protected Tuple3<CtClass,CtMethod,CtMethod> shadow(CtClass ctClass,CtMethod ctMethod) throws CannotCompileException {
+     **/
+    protected void shadow(CtClass ctClass, CtMethod ctMethod) throws CannotCompileException, NotFoundException {
         String oldMethodName = ctMethod.getName();
         String newMethodName = oldMethodName + "$impl";
         ctMethod.setName(newMethodName);
         CtMethod newCtMethod = CtNewMethod.copy(ctMethod, oldMethodName, ctClass, null);
-        for(Object attribute: ctMethod.getMethodInfo().getAttributes()) {
-            newCtMethod.getMethodInfo().addAttribute((AttributeInfo)attribute);
+        for (Object attribute : ctMethod.getMethodInfo().getAttributes()) {
+            newCtMethod.getMethodInfo().addAttribute((AttributeInfo) attribute);
         }
         ctMethod.getMethodInfo().removeAttribute(AnnotationsAttribute.visibleTag);
         ctMethod.getMethodInfo().removeAttribute(ParameterAnnotationsAttribute.visibleTag);
-        return new Tuple3<CtClass,CtMethod,CtMethod>(ctClass,ctMethod,newCtMethod);
+
+        newCtMethod.setBody(enhance(ctClass.getName(),oldMethodName,newMethodName,ctMethod.getReturnType().getName()));
+        ctClass.addMethod(newCtMethod);
     }
 
 
-
-    protected StringBuffer excute(Tuple3<CtClass,CtMethod,CtMethod> tuple3) throws NotFoundException {
+    protected String enhance( String fullClassName,String oldMethodName,String newMethodName,String type){
         StringBuffer body = new StringBuffer();
-        body.append("{\n long start = System.currentTimeMillis();\n");
 
-        body.append("\ncom.xiehua.agent.context.TrackContext context = com.xiehua.agent.context.TrackContext.getTrackContextNotNull();");
-        body.append("\ncom.xiehua.agent.context.MethodNode methodNode = new com.xiehua.agent.context.MethodNode();");
+        body.append("\n { \n");
 
-        String returnType = tuple3._2.getReturnType().getName();
-        if(!"void".equals(returnType)) body.append(returnType + " result = ");
+        body.append("\n  long start = System.currentTimeMillis(); \n");
+        body.append("\n  com.github.begonia.core.context.MethodNode methodNode = null; \n");
+        body.append("\n  try { \n");
+        body.append("\n  com.github.begonia.core.context.TrackContext context = com.github.begonia.core.context.TrackContext.getTrackContextNotNull(); \n");
+        body.append("\n  String methodUid = com.github.begonia.core.context.TrackContext.genUid(); \n");
+        body.append("\n  methodNode = new com.github.begonia.core.context.MethodNode(); \n");
+        body.append("\n  methodNode.setMethodId(methodUid); \n");
+        body.append("\n  if(context.getAnoId() == null || context.getAnoId().equals(\"\")){ \n");
+        //body.append("\n  methodNode.setParentMethodId(null); \n");
+        body.append("\n  methodNode.setNodeType(com.github.begonia.core.context.MethodNode.NODE_TYPE_START); \n");
+        body.append("\n  context.setTrackId(methodUid); \n");
+        body.append("\n  }else { \n");
+        body.append("\n  methodNode.setParentMethodId(context.getAnoId()); \n");
+        body.append("\n  methodNode.setNodeType(com.github.begonia.core.context.MethodNode.NODE_TYPE_NORMAL); \n");
+        body.append("\n  } \n");
+        body.append("\n  methodNode.setTrackId(context.getTrackId()); \n");
 
-        //excute target method
-        body.append(tuple3._2.getName() + "($$);\n");
-        //rt
-        body.append("long rt = System.currentTimeMillis()-start;\n");
+        body.append("\n  methodNode.setFullClassName(\""+fullClassName+"\"); \n");
+        body.append("\n  methodNode.setMethodName(\""+oldMethodName+"\"); \n");
+        body.append("\n  Object[] parameters = $args; \n");
+        body.append("\n  if(parameters != null && parameters.length>0){ \n");
+        body.append("\n  java.util.List list = new java.util.ArrayList(); \n");
+        body.append("\n  for (int i = 0; i < parameters.length; i++) { \n");
+        body.append("\n  list.add(com.alibaba.fastjson.JSON.toJSONString(parameters[i])); \n");
+        body.append("\n  } \n");
+        body.append("\n  methodNode.setArgs(list); \n");
+        body.append("\n  } \n");
+        body.append("\n  context.setAnoId(methodUid); \n");
+        //返回值类型不同
 
-        if(!"void".equals(returnType)) body.append("return result;\n");
+        if(!"void".equals(type)) body.append(type + " result = ");
+        //可以通过$$将传递给拦截器的参数，传递给原来的方法
+        body.append(newMethodName + "($$);\n");
+        if(!"void".equals(type)) {
+            body.append("\n  methodNode.setReturnInfo(com.alibaba.fastjson.JSON.toJSONString(result)); \n");
+            body.append("return result;\n");
+        }
 
+        body.append("\n } catch (java.lang.Exception e) { \n");
 
+        body.append("\n methodNode.setExcetpionMsg(e.getLocalizedMessage()); \n");
+        body.append("\n throw e; \n");
 
-        //tuple3._3.addCatch();
+        body.append("\n } finally { \n");
 
+        body.append("\n if(methodNode != null){ \n");
+        body.append("\n methodNode.setExcuteTime(System.currentTimeMillis() - start); \n");
+       // body.append("\n com.github.begonia.core.context.PostMan.push(methodNode); \n");
+        body.append("\n com.github.begonia.core.bus.jvm.event_bus.Bus.post(methodNode); \n");
+        body.append("\n } \n");
 
-        body.append("}\n");
-        return body;
+        body.append("\n } \n");
+
+        body.append("\n } \n");
+
+        return body.toString();
     }
 
-    public void test(CtMethod newCtMethod){
+    public void test(CtClass ctClass, CtMethod newCtMethod) {
         long start = System.currentTimeMillis();
-        com.github.begonia.core.context.TrackContext context = com.github.begonia.core.context.TrackContext.getTrackContextNotNull();
-        com.github.begonia.core.context.MethodNode methodNode = new com.github.begonia.core.context.MethodNode();
+        MethodNode methodNode = null;
         try {
-            Object[] ob = null;//$args;
-            methodNode.setMethodId(java.util.UUID.randomUUID().toString().replace("-",""));
-            methodNode.setMethodFullName(newCtMethod.getLongName());
-            methodNode.setArgs(java.util.Arrays.asList(ob).stream().map(s -> com.alibaba.fastjson.JSON.toJSONString(s)).collect(Collectors.toList()));
+            TrackContext context = TrackContext.getTrackContextNotNull();
+            String methodUid = TrackContext.genUid();
+            methodNode = new MethodNode();
+            methodNode.setMethodId(methodUid);
+            if(context.getAnoId() == null || context.getAnoId().equals("")){
+                methodNode.setParentMethodId(null);
+                methodNode.setNodeType(MethodNode.NODE_TYPE_START);
+                context.setTrackId(methodUid);
+            }else {
+                methodNode.setParentMethodId(context.getAnoId());
+                methodNode.setNodeType(MethodNode.NODE_TYPE_NORMAL);
+            }
+            methodNode.setTrackId(context.getTrackId());
+            methodNode.setFullClassName(ctClass.getName());
+            methodNode.setMethodName(newCtMethod.getName());
+            Object[] parameters = null;//$args;
+            methodNode.setArgs(java.util.Arrays.asList(parameters).stream().map(s -> JSON.toJSONString(s)).collect(Collectors.toList()));
 
 
+            context.setAnoId(methodUid);
 
-            //TODO something
-        }finally {
+        } catch (Exception e) {
+            methodNode.setExcetpionMsg(e.getLocalizedMessage());
+            throw e;
+        } finally {
+            if(methodNode != null){
+                methodNode.setExcuteTime(System.currentTimeMillis() - start);
+                PostMan.push(methodNode);
+            }
 
         }
 
     }
-
-
-
-
-    protected StringBuffer getStackTraceCode(StringBuffer sb) {
-        sb.append("     StackTraceElement[] as = Thread.currentThread().getStackTrace();");
-        sb.append("     System.out.println(\"class:\"+as[1].getClassName()+\" method:\"+as[1].getMethodName());");
-        sb.append("     StringBuffer temp = new StringBuffer();");
-        sb.append("     for (int i = (as.length - 1); i > 0; i--) {");
-        sb.append("         temp.append(as[i].getClassName()+\".\"+as[i].getMethodName()+\",\");");
-        sb.append("     }");
-        sb.append("     System.out.println(\"调用堆栈:\"+temp.toString());");
-        return sb;
-    }
-
 
 }

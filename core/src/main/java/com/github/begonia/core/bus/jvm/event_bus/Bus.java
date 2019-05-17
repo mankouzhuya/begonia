@@ -1,4 +1,4 @@
-package com.github.begonia.core.bus;
+package com.github.begonia.core.bus.jvm.event_bus;
 
 
 import com.google.common.eventbus.AsyncEventBus;
@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class Bus {
 
-    private static Executor executor = Executors.newFixedThreadPool(20);
+    private static Executor executor = Executors.newFixedThreadPool(4);
 
     private static AsyncEventBus eventBus = new AsyncEventBus(executor);
 

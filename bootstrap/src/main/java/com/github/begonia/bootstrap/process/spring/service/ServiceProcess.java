@@ -9,10 +9,8 @@ import static com.github.begonia.bootstrap.strategy.AnnotationEnhanceStrategy.AN
 public class ServiceProcess extends AbsProcess {
 
     @Override
-    public CtClass process(ProcessChain processChain, CtClass ctClass) {
-        if(!ctClass.hasAnnotation(ANO_SERVICE)) return processChain.process(processChain,ctClass);
-
-        System.out.println("ServiceProcess 处理了 ");
-        return ctClass;
+    public CtClass process(ProcessChain chain, CtClass ctClass) {
+        if(!ctClass.hasAnnotation(ANO_SERVICE)) return chain.process(chain,ctClass);
+        return processAllMethod(ctClass);
     }
 }

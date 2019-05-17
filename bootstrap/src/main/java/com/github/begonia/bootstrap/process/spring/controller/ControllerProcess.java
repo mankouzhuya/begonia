@@ -11,8 +11,7 @@ public class ControllerProcess extends AbsProcess {
     @Override
     public CtClass process(ProcessChain chain, CtClass ctClass) {
         if(!ctClass.hasAnnotation(ANO_RESTCONTROLLER)) return chain.process(chain,ctClass);
-
-        return ctClass;
+        return processAllMethod(ctClass);
     }
 
 }

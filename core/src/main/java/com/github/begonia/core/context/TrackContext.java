@@ -14,17 +14,28 @@ public class TrackContext {
     private static TransmittableThreadLocal<TrackContext> hoder = new TransmittableThreadLocal<TrackContext>();
 
 
-    private String trackId = UUID.randomUUID().toString().replace("-","");
+    private String trackId;
 
-    private List<MethodNode> methodNodes = new ArrayList<>();
+    private String anoId;
+
+    private List<MethodNode> methodNodes;
+
+    private TrackContext(String trackId,List<MethodNode> methodNodes){
+        this.trackId = trackId;
+        this.methodNodes = methodNodes;
+    }
 
     public static TrackContext getTrackContextNotNull(){
         TrackContext context = hoder.get();
         if(context == null){
-            context = new TrackContext();
+            context = new TrackContext(genUid(),new ArrayList<>());
             hoder.set(context);
         }
         return context;
+    }
+
+    public static String genUid(){
+        return UUID.randomUUID().toString().replace("-","");
     }
 
 
@@ -33,11 +44,4 @@ public class TrackContext {
     }
 
 
-    @Override
-    public String toString() {
-        return "TrackContext{" +
-                "trackId='" + trackId + '\'' +
-                ", methodNodes=" + methodNodes +
-                '}';
-    }
 }
