@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Data
 public class TrackContext {
 
 
@@ -43,5 +42,36 @@ public class TrackContext {
         methodNodes.add(methodNode);
     }
 
+    public String getTrackId() {
+        return trackId;
+    }
 
+    public void setTrackId(String trackId) {
+        this.trackId = trackId;
+    }
+
+    public String getAnoId() {
+        return anoId;
+    }
+
+    public void setAnoId(String anoId) {
+        this.anoId = anoId;
+    }
+
+    public List<MethodNode> getMethodNodes() {
+        return methodNodes;
+    }
+
+    public void setMethodNodes(List<MethodNode> methodNodes) {
+        this.methodNodes = methodNodes;
+    }
+
+    @Override
+    public String toString() {
+        return "TrackContext{" +
+                "trackId='" + trackId + '\'' +
+                ", anoId='" + anoId + '\'' +
+                ", methodNodes=" + methodNodes +
+                '}';
+    }
 }

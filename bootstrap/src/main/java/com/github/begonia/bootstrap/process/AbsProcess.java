@@ -108,12 +108,12 @@ public abstract class AbsProcess implements Processer {
         body.append("\n if(methodNode != null){ \n");
         body.append("\n methodNode.setExcuteTime(System.currentTimeMillis() - start); \n");
        // body.append("\n com.github.begonia.core.context.PostMan.push(methodNode); \n");
-        body.append("\n com.github.begonia.core.bus.jvm.event_bus.Bus.post(methodNode); \n");
-        body.append("\n } \n");
+        body.append("\n com.github.begonia.core.bus.jvm.event_bus.Bus.post(new com.github.begonia.core.bus.jvm.msg.Msg(com.github.begonia.core.bus.jvm.msg.Msg.MSG_TYPE_METHOD_NODE,methodNode)); \n");
+        body.append("\n } \n");//if(methodNode != null){ 结束
 
-        body.append("\n } \n");
+        body.append("\n } \n");//try结束
 
-        body.append("\n } \n");
+        body.append("\n } \n");//最外层结束
 
         return body.toString();
     }

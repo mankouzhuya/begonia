@@ -6,8 +6,6 @@ import java.util.List;
 
 public class MethodNode implements Serializable {
 
-    public static final Integer NODE_TYPE_EMPTY = 0;
-
     public static final Integer NODE_TYPE_START = 1;
 
     public static final Integer NODE_TYPE_NORMAL = 2;
