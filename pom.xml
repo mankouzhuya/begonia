@@ -14,6 +14,7 @@
         <module>collector</module>
         <module>sdk</module>
         <module>examples</module>
+        <module>cache</module>
     </modules>
 
     <parent>
@@ -56,6 +57,7 @@
         <quartz.version>2.3.1</quartz.version>
         <vavr.version>0.9.2</vavr.version>
         <disruptor.version>3.4.2</disruptor.version>
+        <caffeine.version>2.7.0</caffeine.version>
     </properties>
 
     <dependencies>

@@ -1,6 +1,5 @@
 package com.github.begonia.examples.springboot.provider.controller;
 
-import com.github.begonia.core.cache.DefaultCache;
 import com.github.begonia.examples.springboot.provider.dto.UserDTO;
 import com.github.begonia.examples.springboot.provider.service.HelloService;
 import org.springframework.beans.factory.annotation.Autowired;

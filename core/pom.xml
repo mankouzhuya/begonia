@@ -25,6 +25,12 @@
             <artifactId>disruptor</artifactId>
             <version>${disruptor.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github</groupId>
+            <artifactId>cache</artifactId>
+            <version>${version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

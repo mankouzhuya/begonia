@@ -1,7 +1,8 @@
-package com.github.begonia.core.cache;
+package com.github.begonia.cache;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public interface SimpleCache {
 
@@ -20,6 +21,11 @@ public interface SimpleCache {
      **/
     Object put(String key, Object value);
 
+    /**
+     * 添加一条数据
+     * @param expiration 过期时间
+     **/
+    Object put(String key, Object value,Long expiration);
 
     /**
      * 检查某个key是否存在

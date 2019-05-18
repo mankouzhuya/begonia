@@ -1,9 +1,11 @@
-package com.github.begonia.core.cache;
+package com.github.begonia.cache;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.begonia.cache.timing.HashedWheelTimer;
+import com.github.begonia.cache.timing.WaitStrategy;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -13,19 +15,13 @@ import java.util.stream.Collectors;
 
 public class DefaultCache implements SimpleCache {
 
-    public static final String REDIS_GATEWAY_UPDATE_LOCALCACHE_TOPIC = "redis_gateway_update_localcache_topic";
-
-    private static LoadingCache<String, Object> cache = CacheBuilder.newBuilder()
+    private static LoadingCache<String, Object> cache = Caffeine.newBuilder()
             .maximumSize(1000000)//最多存放1000000个数据
-            .expireAfterAccess(7, TimeUnit.DAYS)//缓存7天，7天之后进行回收
+            .expireAfterAccess(1, TimeUnit.DAYS)//缓存1天，7天之后进行回收
             .recordStats()//开启，记录状态数据功能
-            .build(new CacheLoader<String, Object>() {
-                @Override
-                public Object load(String key) throws Exception {
-                    // TODO Auto-generated method stub
-                    return null;
-                }
-            });
+            .build(s -> null);
+
+    private static HashedWheelTimer timer = new HashedWheelTimer();
 
     private static DefaultCache instance;
 
@@ -42,6 +38,10 @@ public class DefaultCache implements SimpleCache {
             }
         }
         return instance;
+    }
+
+    public static HashedWheelTimer getTimer(){
+        return timer;
     }
 
 
@@ -69,6 +69,23 @@ public class DefaultCache implements SimpleCache {
         cache.put(key, value);
         return value;
     }
+
+    @Override
+    public Object put(String key, Object value, Long expiration) {
+        put(key,value);
+        if(expiration != null && expiration > 0) {
+            String expKey = "exp_"+key;
+            put(expKey, LocalDateTime.now().plusSeconds(expiration));
+            timer.schedule(() -> {
+                LocalDateTime expTime = (LocalDateTime) get(expKey);
+                if(expTime!= null &&  LocalDateTime.now().isBefore(expTime)) return ;
+                remove(key);
+                remove(expKey);
+            },expiration,TimeUnit.SECONDS);
+        }
+        return value;
+    }
+
 
     /**
      * 检查某个key是否存在
@@ -114,6 +131,27 @@ public class DefaultCache implements SimpleCache {
     @Override
     public void removeAll() {
         cache.invalidateAll();
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+//        DefaultCache.getInstance().put("hello","world",5L);
+//        Thread.sleep(4000);
+//        System.out.println(DefaultCache.getInstance().get("hello"));
+//        Thread.sleep(2000);
+//        System.out.println(DefaultCache.getInstance().get("hello"));
+        System.out.println(LocalDateTime.now());
+        System.out.println("========================");
+        DefaultCache.getInstance().put("hello2","world2",5L);
+        Thread.sleep(2000);
+        System.out.println("外面:+"+LocalDateTime.now()+DefaultCache.getInstance().get("hello2"));
+        DefaultCache.getInstance().put("hello2","world3",7L);
+        while (true){
+            Thread.sleep(1000);
+            System.out.println(LocalDateTime.now()+"===>"+DefaultCache.getInstance().get("hello2"));
+        }
+
+
+
     }
 
 

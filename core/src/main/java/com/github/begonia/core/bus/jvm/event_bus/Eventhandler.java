@@ -1,7 +1,7 @@
 package com.github.begonia.core.bus.jvm.event_bus;
 
+import com.github.begonia.cache.DefaultCache;
 import com.github.begonia.core.bus.jvm.msg.Msg;
-import com.github.begonia.core.cache.DefaultCache;
 import com.github.begonia.core.context.MethodNode;
 import com.github.begonia.core.packet.sender.HttpSender;
 import com.github.begonia.core.packet.sender.Packet;
@@ -18,6 +18,7 @@ import static com.github.begonia.core.context.MethodNode.NODE_TYPE_START;
 @Slf4j
 public class Eventhandler {
 
+    public static final Long METHOD_NODE_EXP = 60 * 1L;
 
     /**
      * 只有通过@Subscribe注解的方法才会被注册进EventBus
@@ -43,14 +44,14 @@ public class Eventhandler {
         if(object != null){
             List<MethodNode> arrayList = (List<MethodNode>) object;
             arrayList.add(node);
-            DefaultCache.getInstance().put(node.getTrackId(),arrayList);
+            DefaultCache.getInstance().put(node.getTrackId(),arrayList,METHOD_NODE_EXP);
             //check node type
             if(NODE_TYPE_START == node.getNodeType()) sendPacket(node.getTrackId());
             return ;
         }
         List<MethodNode> arrayList = new ArrayList<>();
         arrayList.add(node);
-        DefaultCache.getInstance().put(node.getTrackId(),arrayList);
+        DefaultCache.getInstance().put(node.getTrackId(),arrayList,METHOD_NODE_EXP);
     }
 
     private void sendPacket(String trackId) throws IOException {
