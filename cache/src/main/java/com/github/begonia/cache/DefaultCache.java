@@ -4,6 +4,7 @@ import com.github.begonia.cache.timing.HashedWheelTimer;
 import com.github.begonia.cache.timing.WaitStrategy;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class DefaultCache implements SimpleCache {
 
     private static LoadingCache<String, Object> cache = Caffeine.newBuilder()
@@ -72,17 +74,36 @@ public class DefaultCache implements SimpleCache {
 
     @Override
     public Object put(String key, Object value, Long expiration) {
+        if(expiration == null || expiration == 0) throw new RuntimeException("过期时间不能为空或者不能为0");
         put(key,value);
-        if(expiration != null && expiration > 0) {
-            String expKey = "exp_"+key;
-            put(expKey, LocalDateTime.now().plusSeconds(expiration));
-            timer.schedule(() -> {
-                LocalDateTime expTime = (LocalDateTime) get(expKey);
-                if(expTime!= null &&  LocalDateTime.now().isBefore(expTime)) return ;
-                remove(key);
-                remove(expKey);
+        String expKey = "exp_"+key;
+        put(expKey, LocalDateTime.now().plusSeconds(expiration));
+        timer.schedule(() -> {
+            LocalDateTime expTime = (LocalDateTime) get(expKey);
+            if(expTime!= null &&  LocalDateTime.now().isBefore(expTime)) return ;
+            remove(key);
+            remove(expKey); },expiration,TimeUnit.SECONDS);
+        return value;
+    }
+
+    @Override
+    public Object put(String key, Object value, Long expiration, KeyListenter listenter) {
+        if(expiration == null || expiration == 0) throw new RuntimeException("过期时间不能为空或者不能为0");
+        if(listenter == null) throw new RuntimeException("监听器不能为空");
+        put(key,value);
+        String expKey = "exp_"+key;
+        put(expKey, LocalDateTime.now().plusSeconds(expiration));
+        String lisKey = "lis_"+key;
+        put(lisKey, listenter);
+        timer.schedule(() -> {
+            LocalDateTime expTime = (LocalDateTime) get(expKey);
+            if(expTime!= null &&  LocalDateTime.now().isBefore(expTime)) return ;
+            KeyListenter listenterExc = (KeyListenter) get(lisKey);
+            try{listenterExc.onExpire(key,get(key));}catch (Exception e){log.error("key listenter执行错误");}
+            remove(key);
+            remove(expKey);
+            remove(lisKey);
             },expiration,TimeUnit.SECONDS);
-        }
         return value;
     }
 
@@ -134,17 +155,17 @@ public class DefaultCache implements SimpleCache {
     }
 
     public static void main(String[] args) throws InterruptedException {
-//        DefaultCache.getInstance().put("hello","world",5L);
-//        Thread.sleep(4000);
+//        DefaultCache.getInstance().put("hello","world",5L,(s,t)-> System.out.println("key->"+s+",删除了:+"+t));
+//        Thread.sleep(6000);
 //        System.out.println(DefaultCache.getInstance().get("hello"));
 //        Thread.sleep(2000);
 //        System.out.println(DefaultCache.getInstance().get("hello"));
         System.out.println(LocalDateTime.now());
         System.out.println("========================");
-        DefaultCache.getInstance().put("hello2","world2",5L);
+        DefaultCache.getInstance().put("hello2","world2",5L,(s,t)-> System.out.println("key->"+s+",删除了111111111:+"+t));
         Thread.sleep(2000);
         System.out.println("外面:+"+LocalDateTime.now()+DefaultCache.getInstance().get("hello2"));
-        DefaultCache.getInstance().put("hello2","world3",7L);
+        DefaultCache.getInstance().put("hello2","world3",7L,(s,t)-> System.out.println("key->"+s+",删除了222222:+"+t));
         while (true){
             Thread.sleep(1000);
             System.out.println(LocalDateTime.now()+"===>"+DefaultCache.getInstance().get("hello2"));
