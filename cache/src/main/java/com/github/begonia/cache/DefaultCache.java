@@ -155,8 +155,8 @@ public class DefaultCache implements SimpleCache {
     }
 
     public static void main(String[] args) throws InterruptedException {
-//        DefaultCache.getInstance().put("hello","world",5L,(s,t)-> System.out.println("key->"+s+",删除了:+"+t));
-//        Thread.sleep(6000);
+        DefaultCache.getInstance().put("hello","world",5L,(s,t)-> System.out.println("key->"+s+",删除了:+"+t));
+        Thread.sleep(6000);
 //        System.out.println(DefaultCache.getInstance().get("hello"));
 //        Thread.sleep(2000);
 //        System.out.println(DefaultCache.getInstance().get("hello"));

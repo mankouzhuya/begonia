@@ -1,7 +1,6 @@
 package com.github.begonia.core.context;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,26 +18,49 @@ public class TrackContext {
 
     private List<MethodNode> methodNodes;
 
-    private TrackContext(String trackId,List<MethodNode> methodNodes){
+    private TrackContext(String trackId, List<MethodNode> methodNodes) {
         this.trackId = trackId;
         this.methodNodes = methodNodes;
     }
 
-    public static TrackContext getTrackContextNotNull(){
+    /**
+     * 获取上下文
+     **/
+    public static TrackContext getTrackContextNotNull() {
         TrackContext context = hoder.get();
-        if(context == null){
-            context = new TrackContext(genUid(),new ArrayList<>());
-            hoder.set(context);
+        if (context == null) {
+            synchronized (TrackContext.class) {
+                if (hoder.get() == null) {
+                    context = new TrackContext(genUid(), new ArrayList<>());
+                    hoder.set(context);
+                }
+                return hoder.get();
+            }
         }
         return context;
     }
 
-    public static String genUid(){
-        return UUID.randomUUID().toString().replace("-","");
+
+    /**
+     * 清除上下文
+     **/
+    public static void clearEventContext() {
+        TrackContext context = hoder.get();
+        if (context != null) {
+            synchronized (TrackContext.class) {
+                if (hoder.get() != null) {
+                    hoder.remove();
+                }
+            }
+        }
+    }
+
+    public static String genUid() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 
 
-    public void addMethodNode(MethodNode methodNode){
+    public void addMethodNode(MethodNode methodNode) {
         methodNodes.add(methodNode);
     }
 
