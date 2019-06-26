@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
-public class BegoniaLoader{
+public class BegoniaClassLoader {
 
     /** URLClassLoader的addURL方法 */
     private static Method addURL = initAddMethod();

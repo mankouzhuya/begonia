@@ -3,8 +3,7 @@ package com.github.begonia.core.bus.jvm.event_bus;
 import com.github.begonia.cache.DefaultCache;
 import com.github.begonia.core.bus.jvm.msg.Msg;
 import com.github.begonia.core.context.MethodNode;
-import com.github.begonia.core.packet.sender.HttpSender;
-import com.github.begonia.core.packet.sender.Packet;
+import com.github.begonia.core.packet.sender.SocketSender;
 import com.google.common.eventbus.Subscribe;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,7 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.github.begonia.core.bus.jvm.msg.Msg.*;
+import static com.github.begonia.core.bus.jvm.msg.Msg.MSG_TYPE_METHOD_NODE;
 import static com.github.begonia.core.context.MethodNode.NODE_TYPE_START;
 
 @Slf4j
@@ -26,38 +25,40 @@ public class Eventhandler {
      *
      * @param msg
      */
-   // @AllowConcurrentEvents//线程安全
+    // @AllowConcurrentEvents//线程安全
     @Subscribe
     public void process(final Msg msg) throws IOException {
-        if(msg.getType() == null)return;
-        if(MSG_TYPE_METHOD_NODE == msg.getType()){
+        if (msg.getType() == null) return;
+        if (MSG_TYPE_METHOD_NODE == msg.getType()) {
             processMethodNode(msg);
-            return ;
+            return;
         }
 
     }
 
     private void processMethodNode(Msg msg) throws IOException {
         MethodNode node = (MethodNode) msg.getMsgBody();
+        //System.out.println("class:" + node.getFullClassName() + ",type:" + node.getNodeType());
         Object object = DefaultCache.getInstance().get(node.getTrackId());
-
-        if(object != null){
+        if (object != null) {
             List<MethodNode> arrayList = (List<MethodNode>) object;
             arrayList.add(node);
-            DefaultCache.getInstance().put(node.getTrackId(),arrayList,METHOD_NODE_EXP);
+            DefaultCache.getInstance().put(node.getTrackId(), arrayList, METHOD_NODE_EXP);
             //check node type
-            if(NODE_TYPE_START == node.getNodeType()) sendPacket(node.getTrackId());
-            return ;
+            if (NODE_TYPE_START == node.getNodeType()) sendPacket(node.getTrackId());
+            return;
         }
         List<MethodNode> arrayList = new ArrayList<>();
         arrayList.add(node);
-        DefaultCache.getInstance().put(node.getTrackId(),arrayList,METHOD_NODE_EXP);
+        DefaultCache.getInstance().put(node.getTrackId(), arrayList, METHOD_NODE_EXP);
     }
 
+    /**
+     * 发送报文
+     **/
     private void sendPacket(String trackId) throws IOException {
         Object object = DefaultCache.getInstance().get(trackId);
-        Packet packet = new Packet(trackId, (List<MethodNode>) object);
-        new HttpSender().send(packet);
+        new SocketSender().send(object);
         DefaultCache.getInstance().remove(trackId);
     }
 }

@@ -29,8 +29,13 @@
             <groupId>com.github</groupId>
             <artifactId>cache</artifactId>
             <version>${version}</version>
-            <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github</groupId>
+            <artifactId>communication</artifactId>
+            <version>${version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -44,7 +44,7 @@ public class TrackContext {
     /**
      * 清除上下文
      **/
-    public static void clearEventContext() {
+    public static void clearContext() {
         TrackContext context = hoder.get();
         if (context != null) {
             synchronized (TrackContext.class) {

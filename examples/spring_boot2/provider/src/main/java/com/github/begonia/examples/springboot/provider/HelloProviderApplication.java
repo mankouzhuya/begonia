@@ -3,8 +3,8 @@ package com.github.begonia.examples.springboot.provider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author xujin
@@ -12,27 +12,13 @@ import java.util.List;
 @SpringBootApplication
 public class HelloProviderApplication {
 
-    public static void main(String[] args) {
-//        System.out.println(Thread.currentThread().getStackTrace()[1].getClassName());
-//        System.out.println(Thread.currentThread().getStackTrace()[1].getMethodName());
-//        new HelloProviderApplication().test();
+    public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         SpringApplication.run(HelloProviderApplication.class, args);
+//        //regist bus
+//        Bus.register(new Eventhandler());
+//        Client client = new Client();
+//        client.start("localhost", 8888);
     }
 
-    public void test(){
-
-        List list = new ArrayList();
-        StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[1];
-        System.out.println(Thread.currentThread().getStackTrace()[1].getClassName());
-        System.out.println(Thread.currentThread().getStackTrace()[1].getMethodName());
-    }
-
-    public String test2(){
-        try {
-            return "";
-        }finally {
-            test();
-        }
-    }
 
 }
