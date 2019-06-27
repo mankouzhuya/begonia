@@ -6,6 +6,7 @@ import com.github.begonia.bootstrap.trigger.TaskTrigger;
 import com.github.begonia.communication.Client;
 import com.github.begonia.core.bus.jvm.event_bus.Bus;
 import com.github.begonia.core.bus.jvm.event_bus.Eventhandler;
+import com.github.begonia.core.utils.PropsUtil;
 import com.google.common.base.Strings;
 import io.vavr.Tuple2;
 import javassist.ClassPool;
@@ -14,6 +15,7 @@ import javassist.LoaderClassPath;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
@@ -33,13 +35,19 @@ public class Bootstrap {
 
     public static Map<String, String> AGENT_MAP;//agent 参数
 
-    public static final String AGENT_PARAM_PACKAGE_SCAN = "package_scan";//包扫描
+    public static final String AGENT_PARAM_PACKAGE_SCAN = "client.package_scan";//包扫描
+
+    public static final String PARAM_SERVER_HOST = "server.address";//服务端地址
+
+    public static final String PARAM_SERVER_PORT = "server.port";//服务端地址
 
     public static void premain(String arg, Instrumentation instrumentation) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, IOException, ExecutionException, InterruptedException {
         //build agent param
         if (log.isDebugEnabled()) log.debug("agent 参数:{}", arg);
         try {
-            AGENT_MAP = buildInputParam(arg);
+            AGENT_MAP = new PropsUtil(getConfigPath() + "bootstrap.properties").loadPropsToMap();
+            Map<String, String> map = buildInputParam(arg);
+            AGENT_MAP.putAll(map);
         } catch (Exception e) {
             log.error("agent参数错误", e);
             return;
@@ -79,26 +87,28 @@ public class Bootstrap {
         });
         //start communication module
         Client client = new Client();
-        client.start("localhost", 8888);
+        client.start(AGENT_MAP.get(PARAM_SERVER_HOST), Integer.valueOf(AGENT_MAP.get(PARAM_SERVER_PORT)));
     }
 
     public static String getLibPath() {
+        File file = new File(getAgentPath());
+        return file.getParent() + File.separator + "lib" + File.separator;
+
+    }
+
+    public static String getConfigPath() {
+        File file = new File(getAgentPath());
+        return file.getParent() + File.separator + "conf" + File.separator;
+    }
+
+    private static String getAgentPath() {
         List<String> paths = ManagementFactory.getRuntimeMXBean().getInputArguments().stream().filter(s -> s.contains("bootstrap") && s.contains(".jar")).collect(Collectors.toList());
         if (paths == null || paths.size() < 1) {
             log.warn("bootstrap jar包路径没找到");
             return null;
         }
-        String[] temp = paths.get(0).split(":");
-        String[] strs = temp[temp.length - 1].replace("\\", "/").split("/");
-        StringBuffer stringBuffer = new StringBuffer();
-        for (int i = 0; i < strs.length; i++) {
-            if (i == (strs.length - 1)) {
-                stringBuffer.append("lib/");
-            } else {
-                stringBuffer.append(strs[i] + "/");
-            }
-        }
-        return stringBuffer.toString();
+        String[] temp = paths.get(0).split("-javaagent:");
+        return temp[1];
     }
 
     public static Map<String, String> buildInputParam(String arg) {

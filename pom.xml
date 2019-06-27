@@ -60,6 +60,8 @@
         <disruptor.version>3.4.2</disruptor.version>
         <caffeine.version>2.7.0</caffeine.version>
         <voovan.version>4.0.14</voovan.version>
+        <hashed-wheel-timer.version>0.0.4</hashed-wheel-timer.version>
+        <aio-core.version>1.4.1</aio-core.version>
     </properties>
 
     <dependencies>

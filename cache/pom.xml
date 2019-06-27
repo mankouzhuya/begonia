@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.digitalcipher</groupId>
             <artifactId>hashed-wheel-timer</artifactId>
-            <version>0.0.4</version>
+            <version>${hashed-wheel-timer.version}</version>
             <type>pom</type>
         </dependency>
 

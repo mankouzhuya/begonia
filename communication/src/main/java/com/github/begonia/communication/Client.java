@@ -1,6 +1,7 @@
 package com.github.begonia.communication;
 
 import com.alibaba.fastjson.JSON;
+import com.github.begonia.cache.DefaultCache;
 import com.github.begonia.communication.protocol.StringProtocol;
 import com.github.begonia.communication.protocol.YqnPacket;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,9 @@ import org.smartboot.socket.transport.WriteBuffer;
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.begonia.communication.protocol.YqnPacket.TYPE_HEART;
 
@@ -24,9 +27,26 @@ public class Client {
 
     private static AioSession<String> session;
 
+    private static String severHost;
+
+    private static Integer serverPort;
+
+    private static Boolean regFlag = false;
+
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         Client client = new Client();
         client.start("localhost", 8888);
+    }
+
+    public static synchronized void reconnection() {
+        System.out.println("重新连接" + LocalDateTime.now());
+        if (session != null && !session.isInvalid()) return;
+        try {
+            start(severHost, serverPort);
+        } catch (Exception e) {
+            log.error("重新连接服务器失败:{}", e);
+        }
+
     }
 
     public static void start(String host, Integer port) throws InterruptedException, ExecutionException, IOException {
@@ -81,16 +101,34 @@ public class Client {
         client.setBufferPagePool(bufferPagePool);
         client.setWriteQueueCapacity(10);
         session = client.start(asynchronousChannelGroup);
+        severHost = host;
+        serverPort = port;
+        regFlag = false;
     }
 
-    public static void write(YqnPacket packet) throws IOException {
+    public static void write(YqnPacket packet) throws InterruptedException, ExecutionException, IOException {
         if (packet == null) throw new IllegalArgumentException("参数不能为空");
         if (session == null) throw new RuntimeException("未连接服务器");
         String msg = JSON.toJSONString(packet);
         byte[] data = msg.getBytes(StandardCharsets.UTF_8);
         WriteBuffer outputStream = session.writeBuffer();
+        if (outputStream == null) {
+            log.error("与服务器连接断开,正在重新连接...");
+            if (!regFlag) regTask();
+            return;
+        }
         outputStream.writeInt(data.length);
         outputStream.write(data);
         outputStream.flush();
     }
+
+    public static void regTask() {
+        regFlag = true;
+        reconnection();
+        //重连
+        DefaultCache.getTimer().schedule(() -> {
+            if (session == null || session.isInvalid()) regTask();
+        }, 5, TimeUnit.SECONDS);
+    }
+
 }

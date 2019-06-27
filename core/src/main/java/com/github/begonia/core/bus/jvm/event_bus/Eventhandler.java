@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.begonia.core.bus.jvm.msg.Msg.MSG_TYPE_METHOD_NODE;
 import static com.github.begonia.core.context.MethodNode.NODE_TYPE_START;
@@ -27,7 +28,7 @@ public class Eventhandler {
      */
     // @AllowConcurrentEvents//线程安全
     @Subscribe
-    public void process(final Msg msg) throws IOException {
+    public void process(final Msg msg) throws IOException, ExecutionException, InterruptedException {
         if (msg.getType() == null) return;
         if (MSG_TYPE_METHOD_NODE == msg.getType()) {
             processMethodNode(msg);
@@ -36,7 +37,7 @@ public class Eventhandler {
 
     }
 
-    private void processMethodNode(Msg msg) throws IOException {
+    private void processMethodNode(Msg msg) throws IOException, ExecutionException, InterruptedException {
         MethodNode node = (MethodNode) msg.getMsgBody();
         //System.out.println("class:" + node.getFullClassName() + ",type:" + node.getNodeType());
         Object object = DefaultCache.getInstance().get(node.getTrackId());
@@ -56,7 +57,7 @@ public class Eventhandler {
     /**
      * 发送报文
      **/
-    private void sendPacket(String trackId) throws IOException {
+    private void sendPacket(String trackId) throws IOException, ExecutionException, InterruptedException {
         Object object = DefaultCache.getInstance().get(trackId);
         new SocketSender().send(object);
         DefaultCache.getInstance().remove(trackId);

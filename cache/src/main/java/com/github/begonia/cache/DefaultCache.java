@@ -23,7 +23,7 @@ public class DefaultCache implements SimpleCache {
             .recordStats()//开启，记录状态数据功能
             .build(s -> null);
 
-    private static HashedWheelTimer timer = new HashedWheelTimer();
+    public static HashedWheelTimer timer = new HashedWheelTimer();
 
     private static DefaultCache instance;
 
