@@ -35,7 +35,7 @@ public class Server {
                 if (TYPE_TRACK == yqnPacket.getType()) {
 //                    List<MethodNode> list = JSON.parseObject(yqnPacket.getBody(), new TypeReference<List<MethodNode>>() {
 //                    });
-                    log.info("收到客户端发来来的消息:{}", yqnPacket.getBody());
+                    log.info("收到客户端发来来的消息{}:{}", Thread.currentThread().getName() + "==>" + Thread.currentThread().getId(), yqnPacket.getBody());
                 }
 
             }
