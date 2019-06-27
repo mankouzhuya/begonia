@@ -11,10 +11,12 @@ import java.nio.ByteBuffer;
 public class StringProtocol implements Protocol<String> {
     @Override
     public String decode(ByteBuffer readBuffer, AioSession<String> session) {
+        //识别消息长度
         int remaining = readBuffer.remaining();
         if (remaining < Integer.BYTES) {
             return null;
         }
+        //判断是否存在半包情况
         readBuffer.mark();
         int length = readBuffer.getInt();
         if (length > readBuffer.remaining()) {
