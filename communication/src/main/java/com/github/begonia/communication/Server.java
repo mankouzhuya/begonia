@@ -72,7 +72,14 @@ public class Server {
              */
             @Override
             public boolean isHeartMessage(AioSession<String> session, String msg) {
-                YqnPacket yqnPacket = JSON.parseObject(msg, YqnPacket.class);
+                YqnPacket yqnPacket = null;
+                try{
+                    yqnPacket  = JSON.parseObject(msg, YqnPacket.class);
+                }catch (Exception e){
+                    log.error("报文解析错误:{}",e);
+                    session.close();
+                }
+                if(yqnPacket == null) return false;
                 return TYPE_HEART == yqnPacket.getType();
             }
         });

@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.begonia.communication.protocol.YqnPacket.TYPE_HEART;
+import static com.github.begonia.communication.protocol.YqnPacket.TYPE_TRACK;
 
 @Slf4j
 public class Client {
@@ -36,6 +37,26 @@ public class Client {
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         Client client = new Client();
         client.start("localhost", 8888);
+        for (int i = 0; i < 10; i++) {
+            new Thread() {
+                @Override
+                public void run() {
+                    while (true) {
+                        YqnPacket packet = new YqnPacket(TYPE_TRACK, LocalDateTime.now().toString());
+                        try {
+                            write(packet);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
+        }
     }
 
     public static synchronized void reconnection() {
@@ -49,7 +70,7 @@ public class Client {
 
     }
 
-    public static void start(String host, Integer port) throws InterruptedException, ExecutionException, IOException {
+    public static synchronized void start(String host, Integer port) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
         System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
@@ -106,7 +127,7 @@ public class Client {
         regFlag = false;
     }
 
-    public static void write(YqnPacket packet) throws InterruptedException, ExecutionException, IOException {
+    public static synchronized void write(YqnPacket packet) throws IOException {
         if (packet == null) throw new IllegalArgumentException("参数不能为空");
         if (session == null) throw new RuntimeException("未连接服务器");
         String msg = JSON.toJSONString(packet);
