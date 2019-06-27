@@ -127,7 +127,7 @@ public class Client {
         regFlag = false;
     }
 
-    public static synchronized void write(YqnPacket packet) throws IOException {
+    public static void write(YqnPacket packet) throws IOException {
         if (packet == null) throw new IllegalArgumentException("参数不能为空");
         if (session == null) throw new RuntimeException("未连接服务器");
         String msg = JSON.toJSONString(packet);
@@ -138,9 +138,11 @@ public class Client {
             if (!regFlag) regTask();
             return;
         }
-        outputStream.writeInt(data.length);
-        outputStream.write(data);
-        outputStream.flush();
+        synchronized(outputStream){
+            outputStream.writeInt(data.length);
+            outputStream.write(data);
+            outputStream.flush();
+        }
     }
 
     public static void regTask() {
