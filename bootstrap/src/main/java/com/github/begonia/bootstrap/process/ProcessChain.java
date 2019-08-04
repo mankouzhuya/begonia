@@ -1,6 +1,8 @@
 package com.github.begonia.bootstrap.process;
 
+import javassist.CannotCompileException;
 import javassist.CtClass;
+import javassist.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +26,7 @@ public class ProcessChain extends AbsProcess {
 
 
     @Override
-    public CtClass process(ProcessChain processChain, CtClass ctClass) {
+    public CtClass process(ProcessChain processChain, CtClass ctClass) throws NotFoundException, CannotCompileException {
         if(processers.size() == index.get()) return null;
         Processer processer = processers.get(index.getAndAdd(1));
         return processer.process(processChain,ctClass);

@@ -37,14 +37,14 @@ public class AnnotationEnhanceStrategy extends AbsEnhanceStrategy {
     }
 
     @Override
-    public Boolean canProcess( ClassPool pool,String sourceClassName,CtClass ctClass) {
-        Boolean canProcess = super.canProcess(pool,sourceClassName,ctClass);
+    public Boolean canProcess( ClassPool pool,String className,CtClass ctClass) {
+        Boolean canProcess = super.canProcess(pool,className,ctClass);
         if(!canProcess) return false;
         return annotations.stream().anyMatch(s -> ctClass.hasAnnotation(s));
     }
 
     @Override
-    public CtClass process(CtClass ctClass) {
+    public CtClass process(CtClass ctClass) throws NotFoundException, CannotCompileException {
         return processChain.process(processChain,ctClass);
     }
 

@@ -1,35 +1,34 @@
 package com.github.begonia.core.context;
 
-import com.github.begonia.core.bus.jvm.disruptor.method_queue.MethodNodeEventHandler;
-import com.github.begonia.core.bus.jvm.disruptor.method_queue.MethodNodeQueue;
+import com.github.begonia.core.bus.jvm.disruptor.method_queue.MsgEventHandler;
+import com.github.begonia.core.bus.jvm.disruptor.method_queue.MsgQueue;
+import com.github.begonia.core.bus.jvm.msg.Msg;
 
 import java.util.Arrays;
 
 public class PostMan {
 
-    private static MethodNodeQueue queue;
+    private static MsgQueue queue;
 
-    private PostMan(){
+    private PostMan() {
 
     }
 
-    public static MethodNodeQueue getInstance(){
-        if(queue == null){
-            synchronized (PostMan.class){
-                if(queue == null) queue = new MethodNodeQueue(Arrays.asList(new MethodNodeEventHandler(),new MethodNodeEventHandler()));
+    public static MsgQueue getInstance() {
+        if (queue == null) {
+            synchronized (PostMan.class) {
+                if (queue == null) queue = new MsgQueue(Arrays.asList(new MsgEventHandler()));
             }
         }
         return queue;
     }
 
 
-
-
-    public static void push(MethodNode methodNode){
-        getInstance().publishEvent(methodNode);
+    public static void push(Msg msg) {
+        getInstance().publishEvent(msg);
     }
 
-    public static void close(){
+    public static void close() {
         getInstance().shutdown();
     }
 

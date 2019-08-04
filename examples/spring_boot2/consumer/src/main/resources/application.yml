@@ -14,6 +14,6 @@ server:
 feign:
   hystrix:
     enabled: false
-    #execution:
-    #  isolation:
-    #    strategy: ExecutionIsolationStrategy.SEMAPHORE
+    execution:
+      isolation:
+        strategy: ExecutionIsolationStrategy.SEMAPHORE

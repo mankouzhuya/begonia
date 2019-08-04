@@ -43,7 +43,7 @@ public class HelloController {
 
 
     @GetMapping("/public_remote/{name}")
-    public String helloRemote(@PathVariable("name") String name, HttpServletRequest request){
+    public String helloRemote(@PathVariable("name") String name){
         return helloRemote.hello(name);
     }
 

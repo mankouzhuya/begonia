@@ -1,6 +1,8 @@
 package com.github.begonia.bootstrap.process;
 
+import javassist.CannotCompileException;
 import javassist.CtClass;
+import javassist.NotFoundException;
 
 public interface Processer {
 
@@ -10,6 +12,6 @@ public interface Processer {
 
     String METHOD_TOSTRING= "java.lang.Object.toString()";
 
-    CtClass process(ProcessChain chain,CtClass ctClass);
+    CtClass process(ProcessChain chain,CtClass ctClass) throws NotFoundException, CannotCompileException;
 
 }

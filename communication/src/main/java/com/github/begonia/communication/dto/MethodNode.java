@@ -1,13 +1,16 @@
-package com.github.begonia.core.context;
+package com.github.begonia.communication.dto;
 
 
+import java.io.Serializable;
 import java.util.List;
 
-public class MethodNode extends SysInfo {
+public class MethodNode implements Serializable {
 
     public static final Integer NODE_TYPE_START = 1;
 
     public static final Integer NODE_TYPE_NORMAL = 2;
+
+    private String trackId;
 
     private String methodId;//id
 
@@ -30,6 +33,14 @@ public class MethodNode extends SysInfo {
     private String excetpionMsg;//异常信息
 
     private List<MethodNode> methodNodes;
+
+    public String getTrackId() {
+        return trackId;
+    }
+
+    public void setTrackId(String trackId) {
+        this.trackId = trackId;
+    }
 
     public String getMethodId() {
         return methodId;
@@ -122,6 +133,7 @@ public class MethodNode extends SysInfo {
     @Override
     public String toString() {
         return "MethodNode{" +
+                "trackId='" + trackId + '\'' +
                 ", methodId='" + methodId + '\'' +
                 ", parentMethodId='" + parentMethodId + '\'' +
                 ", nodeType=" + nodeType +

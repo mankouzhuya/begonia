@@ -11,11 +11,10 @@ import org.smartboot.socket.extension.plugins.HeartPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.channels.AsynchronousChannelGroup;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -35,28 +34,22 @@ public class Client {
     private static Boolean regFlag = false;
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
-        Client client = new Client();
-        client.start("localhost", 8888);
-        for (int i = 0; i < 10; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    while (true) {
-                        YqnPacket packet = new YqnPacket(TYPE_TRACK, LocalDateTime.now().toString());
-                        try {
-                            write(packet);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+        //client.start("zyj562464314.vicp.cc", 17693);
+        start("127.0.0.1", 8989);
+        for (int i = 0; i < 8; i++) {
+            new Thread(() -> {
+                while (true) {
+                    YqnPacket packet = new YqnPacket(TYPE_TRACK, LocalDateTime.now().toString());
+                    try {
+                        write(packet, getSession(), true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        break;
                     }
                 }
-            }.start();
+            }).start();
         }
+
     }
 
     public static synchronized void reconnection() {
@@ -88,30 +81,13 @@ public class Client {
         };
 
         processor.addPlugin(new HeartPlugin<String>(3000) {
-            /**
-             * 自定义心跳消息并发送
-             *
-             * @param session
-             */
+
             @Override
             public void sendHeartRequest(AioSession<String> session) throws IOException {
                 YqnPacket packet = new YqnPacket(TYPE_HEART, "ping");
-                String msg = JSON.toJSONString(packet);
-                byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-                WriteBuffer outputStream = session.writeBuffer();
-                outputStream.writeInt(data.length);
-                outputStream.write(data);
-                outputStream.flush();
+                CommunicationUtils.write(packet, session);
             }
 
-            /**
-             * 判断当前收到的消息是否为心跳消息。
-             * 心跳请求消息与响应消息可能相同，也可能不同，因实际场景而异，故接口定义不做区分。
-             *
-             * @param session
-             * @param msg
-             * @return
-             */
             @Override
             public boolean isHeartMessage(AioSession<String> session, String msg) {
                 YqnPacket yqnPacket = JSON.parseObject(msg, YqnPacket.class);
@@ -127,23 +103,20 @@ public class Client {
         regFlag = false;
     }
 
-    public static void write(YqnPacket packet) throws IOException {
-        if (packet == null) throw new IllegalArgumentException("参数不能为空");
-        if (session == null) throw new RuntimeException("未连接服务器");
-        String msg = JSON.toJSONString(packet);
-        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-        WriteBuffer outputStream = session.writeBuffer();
-        if (outputStream == null) {
-            log.error("与服务器连接断开,正在重新连接...");
-            if (!regFlag) regTask();
-            return;
-        }
-        synchronized(outputStream){
-            outputStream.writeInt(data.length);
-            outputStream.write(data);
-            outputStream.flush();
+    public static void write(YqnPacket packet, AioSession<String> session, Boolean needReconnection) throws IOException {
+        try {
+            CommunicationUtils.write(packet, session);
+        } catch (ConnectException e) {
+            log.error("连接异常:{}", e);
+            synchronized (Client.class) {
+                if (!regFlag && needReconnection) {
+                    regTask();
+                }
+            }
+
         }
     }
+
 
     public static void regTask() {
         regFlag = true;
@@ -152,6 +125,10 @@ public class Client {
         DefaultCache.getTimer().schedule(() -> {
             if (session == null || session.isInvalid()) regTask();
         }, 5, TimeUnit.SECONDS);
+    }
+
+    public static AioSession<String> getSession() {
+        return session;
     }
 
 }

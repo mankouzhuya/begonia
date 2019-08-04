@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-@FeignClient(value = "pay-center",url = "127.0.0.1:5050",path = "pay_center")
+@FeignClient(value = "pay-center")
 public interface HelloFeignService {
 
     /**

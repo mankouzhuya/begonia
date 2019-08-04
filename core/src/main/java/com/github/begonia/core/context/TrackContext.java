@@ -1,26 +1,17 @@
 package com.github.begonia.core.context;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class TrackContext {
-
+public class TrackContext extends SysInfo{
 
     private static TransmittableThreadLocal<TrackContext> hoder = new TransmittableThreadLocal<TrackContext>();
 
+    private volatile String anoId;//当前方法的唯一id
 
-    private String trackId;
+    private TrackContext() {
 
-    private String anoId;
-
-    private List<MethodNode> methodNodes;
-
-    private TrackContext(String trackId, List<MethodNode> methodNodes) {
-        this.trackId = trackId;
-        this.methodNodes = methodNodes;
     }
 
     /**
@@ -31,7 +22,7 @@ public class TrackContext {
         if (context == null) {
             synchronized (TrackContext.class) {
                 if (hoder.get() == null) {
-                    context = new TrackContext(genUid(), new ArrayList<>());
+                    context = new TrackContext();
                     hoder.set(context);
                 }
                 return hoder.get();
@@ -59,19 +50,6 @@ public class TrackContext {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-
-    public void addMethodNode(MethodNode methodNode) {
-        methodNodes.add(methodNode);
-    }
-
-    public String getTrackId() {
-        return trackId;
-    }
-
-    public void setTrackId(String trackId) {
-        this.trackId = trackId;
-    }
-
     public String getAnoId() {
         return anoId;
     }
@@ -80,20 +58,14 @@ public class TrackContext {
         this.anoId = anoId;
     }
 
-    public List<MethodNode> getMethodNodes() {
-        return methodNodes;
+    public static String findGId(List<MethodNode> methodNodes){
+        MethodNode node = methodNodes.stream().filter(s -> s.getNodeType() == MethodNode.NODE_TYPE_START).findFirst().orElseThrow(() -> new RuntimeException("没有找到对应的开始节点"));
+        return node.getGid();
     }
 
-    public void setMethodNodes(List<MethodNode> methodNodes) {
-        this.methodNodes = methodNodes;
+    public static String findFromId(List<MethodNode> methodNodes){
+        MethodNode node = methodNodes.stream().filter(s -> s.getNodeType() == MethodNode.NODE_TYPE_START).findFirst().orElseThrow(() -> new RuntimeException("没有找到对应的开始节点"));
+        return node.getFromId();
     }
 
-    @Override
-    public String toString() {
-        return "TrackContext{" +
-                "trackId='" + trackId + '\'' +
-                ", anoId='" + anoId + '\'' +
-                ", methodNodes=" + methodNodes +
-                '}';
-    }
 }

@@ -29,6 +29,7 @@ public class HelloController {
             traceElements.getLineNumber();
             System.out.println(className);
         }
+        helloService.hello3333("你好");
         return "name->"+name+",date:"+ LocalDateTime.now().toString();
     }
 

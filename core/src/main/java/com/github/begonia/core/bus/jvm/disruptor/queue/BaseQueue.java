@@ -52,7 +52,7 @@ public abstract class BaseQueue<D, E extends ValueWrapper<D>, H extends WorkHand
      */
     protected synchronized void init() {
         ThreadFactory namedThreadFactory = new ThreadFactoryBuilder().setNameFormat("DisruptorThreadPool").build();
-        disruptor = new Disruptor(eventFactory(), getQueueSize(), namedThreadFactory, ProducerType.SINGLE, getStrategy());
+        disruptor = new Disruptor(eventFactory(), getQueueSize(), namedThreadFactory, ProducerType.MULTI, getStrategy());
         disruptor.setDefaultExceptionHandler(new DefaultHandlerException());
         disruptor.handleEventsWithWorkerPool(getHandler());
         ringBuffer = disruptor.start();

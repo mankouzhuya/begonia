@@ -24,5 +24,12 @@ public class YqnPacket implements Serializable {
     private YqnPacket() {
     }
 
+    public static void main(String[] args) {
+        byte[] data = "smart-socket".getBytes();
+        byte[] data2 = "smart-so cket".getBytes();
+        System.out.println(data);
+        System.out.println(data2);
+    }
+
 
 }

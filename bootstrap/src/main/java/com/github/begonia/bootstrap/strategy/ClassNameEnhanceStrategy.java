@@ -1,10 +1,11 @@
 package com.github.begonia.bootstrap.strategy;
 
 import com.github.begonia.bootstrap.process.ProcessChain;
-import com.github.begonia.bootstrap.process.spring.controller.ControllerProcess;
-import com.github.begonia.bootstrap.process.spring.service.ServiceProcess;
+import com.github.begonia.bootstrap.process.feign.RequestTemplateProcess;
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -12,37 +13,42 @@ import java.util.List;
 
 /**
  * 基于class 名字增强class
- * ***/
+ ***/
 @Slf4j
-public class ClassNameEnhanceStrategy extends AbsEnhanceStrategy{
+public class ClassNameEnhanceStrategy extends AbsEnhanceStrategy {
 
-    public List<String> classNames;
+    public static final String CLASS_NAME_FEIGN_REQUESTTEMPLATE = "feign.RequestTemplate";
+
+    public static List<String> classNames;
 
     private ProcessChain processChain;
 
-    public ClassNameEnhanceStrategy(){
+    static {
         List<String> classNameList = new ArrayList<>();
-        classNameList.add("class full name a");
-        classNameList.add("class full name b");
-        this.classNames = classNameList;
+        classNameList.add(CLASS_NAME_FEIGN_REQUESTTEMPLATE);
+        classNames = classNameList;
+    }
+
+    public ClassNameEnhanceStrategy() {
         this.processChain = initChain();
     }
 
     @Override
-    public Boolean canProcess(ClassPool pool,String className,CtClass ctClass) {
-        if(!classNames.contains(className)) return false;
-        return super.canProcess(pool,className,ctClass);
+    public Boolean canProcess(ClassPool pool, String className, CtClass ctClass) {
+        Boolean canProcess = super.canProcess(pool, className, ctClass);
+        if (!canProcess) return false;
+        Boolean flag = classNames.contains(className.replace("/","."));
+        return flag;
     }
 
     @Override
-    public CtClass process(CtClass ctClass) {
-        return processChain.process(processChain,ctClass);
+    public CtClass process(CtClass ctClass) throws NotFoundException, CannotCompileException {
+        return processChain.process(processChain, ctClass);
     }
 
-    public ProcessChain initChain(){
+    public ProcessChain initChain() {
         ProcessChain chain = new ProcessChain();
-        chain.addProcesser(new ControllerProcess());
-        chain.addProcesser(new ServiceProcess());
+        chain.addProcesser(new RequestTemplateProcess());
         return chain;
     }
 }

@@ -15,3 +15,7 @@ management:
         consistency: one
         compressed: true
         batch-size: 10000
+
+socket:
+  host: 127.0.0.1
+  port: 8989

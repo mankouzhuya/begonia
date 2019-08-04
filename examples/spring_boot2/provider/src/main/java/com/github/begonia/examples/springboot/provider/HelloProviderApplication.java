@@ -2,6 +2,7 @@ package com.github.begonia.examples.springboot.provider;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutionException;
  * @author xujin
  */
 @SpringBootApplication
+@EnableFeignClients
 public class HelloProviderApplication {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {

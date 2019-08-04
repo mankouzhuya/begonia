@@ -6,15 +6,14 @@ import javassist.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbsEnhanceStrategy implements EnhanceStrategy{
+public abstract class AbsEnhanceStrategy implements EnhanceStrategy {
 
     @Override
-    public Boolean canProcess(ClassPool pool,String className,CtClass ctClass){
+    public Boolean canProcess(ClassPool pool, String className, CtClass ctClass) {
         try {
-            if(pool.get(className) == null ) return false;
+            if (pool.get(className) == null) return false;
             return true;
         } catch (NotFoundException e) {
-            //log.error("ClassPool中不存在类:{}",className);
             return false;
         }
     }

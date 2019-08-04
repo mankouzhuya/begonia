@@ -1,24 +1,25 @@
 package com.github.begonia.core.bus.jvm.disruptor.method_queue;
 
 import com.github.begonia.core.bus.jvm.disruptor.queue.BaseQueue;
-import com.github.begonia.core.context.MethodNode;
+import com.github.begonia.core.bus.jvm.msg.Msg;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.WorkHandler;
+
 import java.util.List;
 
 /***
  * method node queue
  * **/
-public class MethodNodeQueue extends BaseQueue<MethodNode, MethodNodeEvent, MethodNodeEventHandler> {
+public class MsgQueue extends BaseQueue<Msg, MsgEvent, MsgEventHandler> {
 
     private static final int QUEUE_SIZE = 1024 * 1024;
 
 
-    private List<MethodNodeEventHandler> handlers;
+    private List<MsgEventHandler> handlers;
 
-    public MethodNodeQueue(List<MethodNodeEventHandler> handlers){
+    public MsgQueue(List<MsgEventHandler> handlers) {
         this.handlers = handlers;
         this.init();
     }
@@ -31,13 +32,13 @@ public class MethodNodeQueue extends BaseQueue<MethodNode, MethodNodeEvent, Meth
 
     @Override
     protected EventFactory eventFactory() {
-        return new MethodNodeEventFactory();
+        return new MsgEventFactory();
     }
 
     @Override
     protected WorkHandler[] getHandler() {
         int size = handlers.size();
-        return handlers.toArray(new MethodNodeEventHandler[size]);
+        return handlers.toArray(new MsgEventHandler[size]);
     }
 
     @Override

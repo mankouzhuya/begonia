@@ -1,5 +1,6 @@
 package com.github.begonia.communication.protocol;
 
+import lombok.extern.slf4j.Slf4j;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.transport.AioSession;
 
@@ -8,6 +9,7 @@ import java.nio.ByteBuffer;
 /**
  * @version V1.0 , 2018/11/23
  */
+@Slf4j
 public class StringProtocol implements Protocol<String> {
     @Override
     public String decode(ByteBuffer readBuffer, AioSession<String> session) {
@@ -26,6 +28,8 @@ public class StringProtocol implements Protocol<String> {
         byte[] b = new byte[length];
         readBuffer.get(b);
         readBuffer.mark();
-        return new String(b);
+        String msg = new String(b);
+//        log.info("解码后的msg:{}",msg);
+        return msg;
     }
 }
