@@ -49,7 +49,7 @@
         <spring-cloud.version>Finchley.RELEASE</spring-cloud.version>
         <springfox-swagger2.version>2.7.0</springfox-swagger2.version>
         <javassist.version>3.24.1-GA</javassist.version>
-        <guava.version>24.1-jre</guava.version>
+        <guava.version>24.1.1-jre</guava.version>
         <lombok.version>1.18.4</lombok.version>
         <transmittable-thread-local.version>2.10.2</transmittable-thread-local.version>
         <slf4j-api.version>1.7.7</slf4j-api.version>
