@@ -53,7 +53,7 @@
         <lombok.version>1.18.4</lombok.version>
         <transmittable-thread-local.version>2.10.2</transmittable-thread-local.version>
         <slf4j-api.version>1.7.7</slf4j-api.version>
-        <logback-core.version>1.1.7</logback-core.version>
+        <logback-core.version>1.2.0</logback-core.version>
         <fastjson.version>1.2.57</fastjson.version>
         <quartz.version>2.3.1</quartz.version>
         <vavr.version>0.9.2</vavr.version>
